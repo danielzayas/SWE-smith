@@ -72,7 +72,7 @@ def should_attempt_recovery(inst, repo):
     Attempt if the following criteria are met:
     * Fewer than 8 files are changed
     * Fewer than 500 lines are changed
-    * No changed file is >1000 lines
+    * No changed file is >10000 lines
     """
     patch = PatchSet(inst[KEY_PATCH])
     num_py_edited = len([x for x in patch if x.path.endswith(".py")])
@@ -89,8 +89,8 @@ def should_attempt_recovery(inst, repo):
             # Skip over edits to files that don't exist
             continue
         file_content = open(file_path).read()
-        if len(file_content.splitlines()) > 1000:
-            return False, "Changed file is too long (>1000 lines)"
+        if len(file_content.splitlines()) > 10000:
+            return False, "Changed file is too long (>10000 lines)"
         lines_changed += file_diff.added + file_diff.removed
     if lines_changed == 0:
         return False, "No lines changed (no changed file exists)"
