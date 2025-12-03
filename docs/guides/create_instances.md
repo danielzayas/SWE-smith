@@ -114,6 +114,8 @@ There are 13 (and counting) in total.
   <img src="../../assets/pr_mirror.png" alt="SWE-smith" style="width:100%"/>
 </div>
 
+For a detailed deep-dive into the technical architecture, see [PR Mirroring](./pr_mirroring.md).
+
 This method leverages SWE-bench's [task collection script](https://github.com/SWE-bench/SWE-bench/blob/main/swebench/collect/run_get_tasks_pipeline.sh).
 
 Run the script for a repository, and it will create a `<repo>-task-instances.jsonl.all`.

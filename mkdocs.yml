@@ -62,7 +62,9 @@ nav:
   - Tutorials:
     - guides/index.md
     - Build Environments: guides/env_construction.md
+    - Task Format: guides/task_format.md
     - Create Instances: guides/create_instances.md
+    - PR Mirroring: guides/pr_mirroring.md
     - Validation & Evaluation: guides/harnesses.md
     - Generate Issue Text: guides/issue_gen.md
     - Rate Difficulty: guides/difficulty_rating.md
