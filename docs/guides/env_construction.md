@@ -30,6 +30,12 @@ Next, run the following command to create a Docker image for the repository.
 python -m swesmith.build_repo.create_images --repos Instagram/MonkeyType
 ```
 
+Alternatively, `create_images.py` is the entrypoint for building (and optionally pushing) environment images from the registered `RepoProfile` set:
+
+```shell
+python -m swesmith.build_repo.create_images --profiles Instagram/MonkeyType --push
+```
+
 This command will create two artifacts:
 1. A mirror of the original repository at the specified commit, created under [`swesmith`](https://github.com/orgs/swesmith/repositories). To change the organization, you can...
     * Pass in an `--org` argument, or

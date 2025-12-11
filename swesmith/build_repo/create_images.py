@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from swesmith.profiles import registry
+from swebench.harness.constants import KEY_INSTANCE_ID
 
 
 def build_profile_image(profile, push=False):
@@ -35,13 +36,20 @@ def build_profile_image(profile, push=False):
         return (profile.image_name, False, error_msg)
 
 
-def build_all_images(workers=4, profile_filter=None, proceed=False, push=False):
+def build_all_images(
+    workers=4,
+    profile_filter=None,
+    instance_ids: list[str] | None = None,
+    proceed=False,
+    push=False,
+):
     """
     Build Docker images for all registered profiles in parallel.
 
     Args:
         workers: Maximum number of parallel workers
         profile_filter: Optional list of profile mirror names to filter by
+        instance_ids: Optional list of SWE-bench instance_ids to filter by
         proceed: Whether to proceed without confirmation
 
     Returns:
@@ -49,6 +57,20 @@ def build_all_images(workers=4, profile_filter=None, proceed=False, push=False):
     """
     # Get all available profiles
     all_profiles = registry.values()
+
+    # Build profile filter list from instance_ids if provided
+    instance_profile_filters = []
+    if instance_ids:
+        for inst_id in instance_ids:
+            try:
+                profile = registry.get_from_inst({KEY_INSTANCE_ID: inst_id})
+                instance_profile_filters.append(profile.image_name)
+            except Exception as e:
+                print(f"Skipping {inst_id}: {e}")
+        if profile_filter:
+            profile_filter = list(set(profile_filter + instance_profile_filters))
+        else:
+            profile_filter = instance_profile_filters
 
     # Remove environments that have already been built
     client = docker.from_env()
@@ -144,6 +166,13 @@ def main():
         help="Specific profile mirror names to build (space-separated)",
     )
     parser.add_argument(
+        "-i",
+        "--instance-ids",
+        type=str,
+        nargs="+",
+        help="Specific instance_ids to build/push images for (space-separated)",
+    )
+    parser.add_argument(
         "-y", "--proceed", action="store_true", help="Proceed without confirmation"
     )
     parser.add_argument(
@@ -166,6 +195,7 @@ def main():
     successful, failed = build_all_images(
         workers=args.workers,
         profile_filter=args.profiles,
+        instance_ids=args.instance_ids,
         proceed=args.proceed,
         push=args.push,
     )
