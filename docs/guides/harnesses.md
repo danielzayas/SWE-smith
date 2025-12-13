@@ -202,10 +202,11 @@ The evaluation harness is used to check if the proposed solution for a task inst
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  Docker Environment                                                         │
 │  1. Start Container (from RepoProfile image)                                │
-│  2. Apply Model Patch                                                       │
-│  3. Checkout HEAD~1 (Test cases were removed at HEAD)                                      │
-│  4. Run Tests (RepoProfile.get_test_cmd)                                    │
-│  5. Capture Output                                                          │
+│  2. Checkout the task instance branch (instance_id)                         │
+│  3. Checkout HEAD~1 to restore hidden F2P test files (tests removed at HEAD)│
+│  4. Apply model patch (and revert any changes the patch makes to test files)│
+│  5. Run Tests (RepoProfile.get_test_cmd)                                    │
+│  6. Capture Output                                                          │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
@@ -230,10 +231,24 @@ The orchestration logic in SWE-smith differs from SWE-bench to support its scale
 3.  **Execution**:
     *   It does *not* build images on the fly for every task. Instead, it assumes the `RepoProfile`'s base environment image is pre-built.
     *   It starts a container from that profile's image.
-    *   It applies the prediction patch.
-    *   It checks out the task branch and rewinds to `HEAD~1` to reveal the test case.
-    *   It runs the tests defined in the profile.
-4.  **Grading**: Output is parsed using the profile's log parser.
+    *   It checks out the task instance branch (`instance_id`) inside the container.
+        *   **Branch-per-task requirement**: SWE-smith evaluation assumes **one git branch per task instance** whose name is exactly the task’s `instance_id`. This branch is created and pushed during dataset construction (see `swesmith/harness/gather.py`, which runs `git checkout -b <instance_id>` and `git push origin <instance_id>`).
+    *   **Test-hiding / reveal mechanic**: SWE-smith task branches are expected to have **two commits**:
+        *   Commit A: the **buggy** state *with* the relevant F2P tests present.
+        *   Commit B (branch `HEAD`): a follow-up commit that **removes the F2P test file(s)** so the agent can generate a fix without reading them.
+        During evaluation, the harness checks out the branch tip and then runs `git checkout HEAD~1` to return to Commit A, which **restores the hidden F2P tests** before executing the test command.
+    *   It applies the model patch on top of that “bug + tests restored” working tree (`swesmith/harness/utils.py`).
+    *   It explicitly reverts any changes the model patch made to test files (both F2P and P2P) to prevent solutions that “fix” the task by editing tests (`swesmith/harness/utils.py`).
+    *   It runs the test command returned by `RepoProfile.get_test_cmd(...)` and captures the raw output.
+        *   Depending on the profile, this may run the full suite, or a minimized subset (see `RepoProfile.min_testing`), and `--f2p_only` can further restrict the command to just the F2P test files.
+4.  **Grading**: The harness parses the test output with `RepoProfile.log_parser(...)` and computes resolution/maintenance against the instance’s `FAIL_TO_PASS` and `PASS_TO_PASS` lists (optionally filtered when `--f2p_only` is enabled).
+
+**Key source code references (SWE-smith)**:
+- **Orchestration / entrypoint**: `swesmith/harness/eval.py`
+- **Container execution + git checkouts + apply-patch + “don’t edit tests” enforcement**: `swesmith/harness/utils.py` (`run_patch_in_container`, `_apply_patch`)
+- **Test command selection / minimization**: `swesmith/profiles/base.py` (`RepoProfile.get_test_cmd`, `RepoProfile.min_testing`)
+- **Mapping tests → files (used for `--f2p_only` and for reverting test-file edits)**: `swesmith/profiles/python.py` (`PythonProfile.get_test_files`) and analogous language profiles
+- **Evaluation grading logic**: `swesmith/harness/grading.py` (`get_eval_report`, `get_eval_tests_report`). SWE-smith re-uses `SWE-bench/swebench/harness/grading.py` (`get_resolution_status`) during grading.
 
 #### The `RepoProfile` Abstraction
 
