@@ -58,13 +58,12 @@ Within the container, run the testing suite (e.g. `pytest`) to ensure that the c
     ```bash
     python -m swesmith.build_repo.download_images
     ```
-## Root Cause Analysis: Missing `pyparsing` in `python-openxml__python-docx.0cf6d71f.combine_module__j1zdp70p`
+## Missing Python Dependency Root Cause Analysis & Fix
 
-### Summary
+### Problem
 The eval for `python-openxml__python-docx.0cf6d71f.combine_module__j1zdp70p` failed because the built Docker image’s `testbed` environment lacked the `pyparsing` dependency. Pytest aborted during collection before any tests ran. The yamllint task succeeded; the python-docx task did not.
 
-### What happened (evidence)
-- `try_install_py` was run inside a linux/x86_64 Miniconda container to export `sweenv_python-openxml__python-docx.0cf6d71f.yml`.
+- `try_install_py` was run inside a linux/x86_64 Miniconda container to export `sweenv_python-openxml__python-docx.0cf6d71f.yml`. `try_install_py` behavior succeeded even when downstream tests would fail due to missing deps.
 - `create_images.py` consumed that env file and built `danielzayas/swesmith.x86_64.python-openxml_1776_python-docx.0cf6d71f`.
 - During gold eval, pytest failed on import: `ModuleNotFoundError: No module named 'pyparsing'` (reproduced inside the image with `pytest -vv --maxfail=1 tests/parts/test_story.py::DescribeStoryPart::it_can_create_a_new_pic_inline`).
 - The env YAML did not include `pyparsing`, so the image did not either.
@@ -77,22 +76,35 @@ The installation recipe used by `try_install_py` (`configs/install_repo.sh`: `pi
 
 Branch state is not at fault: the gold patch applied cleanly and tests were reverted; the failure was missing deps.
 
-### Clarifications
-- Where `install_repo.sh` is used: `try_install_py.py` runs `. {install_script}` (e.g., `configs/install_repo.sh`) right after cloning and before exporting `sweenv_*.yml`. Whatever that script installs is what gets captured in the env file.
-- Python version pin: `configs/install_repo.sh` currently creates `testbed` with `python=3.10`. That is fine for many repos but will break those needing newer Python. We should allow profile- or repo-specific Python versions (or pass a version flag) instead of a single hard pin.
-- `try_install_py` behavior: today it succeeds even if tests would fail due to missing deps. It only checks that the install script completes. A more robust behavior is to run a smoke test (or selected tests) and fail fast if imports/deps are missing.
+### Fix 
 
-### Fix forward
-Long-term robust path (preferred):
-1) Install test/dev deps during env export
-   - Add a test-aware install step in `configs/install_repo.sh`: prefer `pip install -e .[test]` when extras exist, else fall back to `pip install -r requirements-test.txt` if present, else a repo-specific hook in the profile (`install_cmds`).
-   - Allow a profile-level override for Python version (e.g., profile fields or a flag) so repos needing >3.10 can export with the correct interpreter.
-2) Add a smoke-test gate to `try_install_py`
-   - After install, run a quick pytest smoke (e.g., `pytest -q --maxfail=1`) or a repo-provided smoke command. Fail `try_install_py` if imports/deps are missing. This prevents exporting envs that can’t even collect tests. Running the full suite per repo may be slow; a short smoke test (single test or `pytest -q --maxfail=1`) strikes a balance. The key is to fail fast on missing imports so broken envs aren’t baked into images.
-3) Re-export envs on linux/x86_64
-   - Keep exporting on linux/x86_64 so build-time packages match the runtime platform.
-4) Rebuild and push images from the validated envs
-   - Once the smoke test passes, rebuild/push so evals won’t hit missing deps.
+Fail fast if imports/deps are missing:
+1) Install test/dev deps during env export (done)
+   - `configs/install_repo.sh` now tries `pip install -e .[test]`, falls back to `requirements-test.txt`, supports profile hooks, and accepts extra test deps. It honors `SWESMITH_PYTHON_VERSION`.
+2) Add a smoke-test gate to `try_install_py` (done)
+   - After install, `pytest -q --maxfail=1` (or provided smoke cmd) runs inside the env; failures abort export.
+3) Re-export envs on linux/x86_64 (done for this instance)
+   - Env/artifacts live under `logs/build_images/env/<repo>.<commit>/`.
+4) Rebuild and push images from the validated envs (done)
+   - Image rebuilt/pushed: `danielzayas/swesmith.x86_64.python-openxml_1776_python-docx.0cf6d71f` (timestamp reflects rebuilt run).
+
 
 ### Test Plan
-- Update install logic to include test deps, re-run `try_install_py` on linux/x86_64, then rebuild/push the image. If needed, adjust the Python version per profile before export.
+
+Env re-exported, image rebuilt/pushed, and the gold eval now resolves the task:
+
+```shell
+(venv) danielzayas ~/Development/SWE-bench/SWE-smith [main] $ python -m swesmith.harness.eval \
+  --run_id retry-python-docx-j1zdp70p \
+  --redo_existing \
+  -i "python-openxml__python-docx.0cf6d71f.combine_module__j1zdp70p" \
+  --predictions_path gold \
+  --dataset_path logs/run_evaluation/two_instances_local.json \
+  --workers 1
+
+Using gold predictions for eval (ignoring `predictions_path` argument)
+Evaluation: 100%|████████████████████████████████████████████████████████████████████████████████| 1/1 [00:21<00:00, 21.20s/it, ✓=1, ✖=0, timeout=0, error=0]
+All instances run.
+Resolved 1/1 instances.
+Wrote report to logs/run_evaluation/retry-python-docx-j1zdp70p/report.json
+```
