@@ -58,7 +58,49 @@ Within the container, run the testing suite (e.g. `pytest`) to ensure that the c
     ```bash
     python -m swesmith.build_repo.download_images
     ```
-## Missing Python Dependency Root Cause Analysis & Fix
+
+## What goes into the image: OS-level deps vs env deps
+
+When SWE-smith builds an environment image for a repo, it may install dependencies in **two different places**:
+
+- **Inside the Python/conda environment**: typical `pip install ...` / `conda install ...` packages that live in the exported `sweenv_*.yml`.
+- **At the container OS layer**: apt packages and other system tooling installed during the Docker build. These tools are *not* “in the Python env”, but are available to it at runtime.
+
+This distinction matters because some repos need **system binaries or headers** that pip/conda alone can’t provide, for example:
+
+- **Ghostscript** for PDF parsing (e.g. `pdfplumber`)
+- **Graphviz CLI** for tests that render dependency graphs (e.g. `pipdeptree`)
+- **System headers/libraries** for building native deps (e.g. `libxml2-dev`, `libxslt-dev`, `libjpeg-dev` as seen in `scrapy`)
+- **Java toolchain** for repos that need it during builds/tests/docs (e.g. `openjdk-17-*` as seen in `hydra`)
+- **Build toolchains** (gcc/cmake/meson/ninja/...) for projects like `conan`
+
+In SWE-smith, these OS-level installs are typically expressed in a repo profile’s `install_cmds` as `apt-get ...` lines alongside the `pip install ...` lines.
+
+## How repo profiles drive Docker builds (and why OS deps get reused)
+
+Each `RepoProfile` supplies a list of shell commands (`install_cmds`) that become the **setup script** executed during the Docker build for that image (e.g., cloning the mirrored repo, then running the profile’s install steps).
+
+Because `apt-get` runs during the Docker build, system packages land in the **image filesystem**, not in the exported conda/pip environment. That means:
+
+- **They’re reused automatically** every time you run a container from that same image tag.
+- **They won’t appear** in `sweenv_*.yml` exports (those capture the env, not the OS layer).
+
+If you see runtime failures like “missing `gs`/`dot`/headers”, check whether the repo’s profile needs extra OS dependencies in its `install_cmds`.
+
+## Image naming, commit alignment, and “reuse” behavior
+
+SWE-smith intentionally builds images **pinned to a specific upstream commit**:
+
+- The profile pins an upstream commit.
+- That commit hash is baked into:
+  - the mirrored repo name, and
+  - the Docker image tag.
+
+Practically, this means images are **per repo + per commit** (e.g. `swesmith.x86_64.<repo>.<commit>`), not a single “rolling” image shared across many commits. This design favors deterministic, reproducible builds and avoids having to guess which historical commits can safely share an environment.
+
+Related: when reproducing bugs from PRs, SWE-smith often applies a patch (including “reversal patches” when a PR was merged) **on top of the mirrored commit’s environment**, rather than checking out the PR’s original historical base commit. The environment corresponds to the profile’s pinned commit; the patch adjusts repo content to match the target bug state.
+
+## Appendix: Missing Python Dependency Root Cause Analysis & Fix
 
 ### Problem
 The eval for `python-openxml__python-docx.0cf6d71f.combine_module__j1zdp70p` failed because the built Docker image’s `testbed` environment lacked the `pyparsing` dependency. Pytest aborted during collection before any tests ran. The yamllint task succeeded; the python-docx task did not.
