@@ -14,6 +14,8 @@ class JavaScriptProfile(RepoProfile):
     Profile for JavaScript repositories.
     """
 
+    exts: list[str] = field(default_factory=lambda: [".js"])
+
 
 def default_npm_install_dockerfile(mirror_name: str, node_version: str = "18") -> str:
     return f"""FROM node:{node_version}-bullseye

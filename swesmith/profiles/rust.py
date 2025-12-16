@@ -11,6 +11,7 @@ class RustProfile(RepoProfile):
     """
 
     test_cmd: str = "cargo test --verbose"
+    exts: list[str] = field(default_factory=lambda: [".rs"])
 
     def log_parser(self, log: str):
         test_status_map = {}

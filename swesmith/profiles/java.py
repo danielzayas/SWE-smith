@@ -11,6 +11,8 @@ class JavaProfile(RepoProfile):
     Profile for Java repositories.
     """
 
+    exts: list[str] = field(default_factory=lambda: [".java"])
+
 
 @dataclass
 class Gsondd2fe59c(JavaProfile):

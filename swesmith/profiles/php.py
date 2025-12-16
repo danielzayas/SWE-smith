@@ -1,6 +1,6 @@
 import re
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from swebench.harness.constants import TestStatus
 from swesmith.profiles.base import RepoProfile, registry
 
@@ -12,6 +12,7 @@ class PhpProfile(RepoProfile):
     """
 
     test_cmd: str = "vendor/bin/phpunit --testdox --colors=never"
+    exts: list[str] = field(default_factory=lambda: [".php"])
 
 
 @dataclass
