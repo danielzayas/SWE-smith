@@ -493,21 +493,6 @@ class Isodate17cb25eb(PythonProfile):
 
 
 @dataclass
-class JaxEbd90e06f(PythonProfile):
-    owner: str = "jax-ml"
-    repo: str = "jax"
-    commit: str = "ebd90e06fa7caad087e2342431e3899cfd2fdf98"
-    install_cmds: list = field(default_factory=lambda: ['pip install -e ".[cpu]"'])
-    test_cmd: str = (
-        "source /opt/miniconda3/bin/activate; "
-        f"conda activate {ENV_NAME}; "
-        "pytest --disable-warnings --color=no --tb=no --verbose -n auto"
-    )
-    min_testing: bool = True
-    min_pregold: bool = True
-
-
-@dataclass
 class JinjaAda0a9a6(PythonProfile):
     owner: str = "pallets"
     repo: str = "jinja"

@@ -1,7 +1,7 @@
 import re
 
 from dataclasses import dataclass, field
-from swesmith.constants import KEY_PATCH
+from swesmith.constants import ENV_NAME, KEY_PATCH
 from swebench.harness.constants import TestStatus
 from swesmith.profiles.base import RepoProfile, registry
 from swesmith.profiles.utils import X11_DEPS
@@ -20,8 +20,8 @@ class JavaScriptProfile(RepoProfile):
 def default_npm_install_dockerfile(mirror_name: str, node_version: str = "18") -> str:
     return f"""FROM node:{node_version}-bullseye
 RUN apt update && apt install -y git  
-RUN git clone https://github.com/{mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm install
 """
 
@@ -100,8 +100,8 @@ class ReactPDFee5c96b8(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:20-bullseye
 RUN apt update && apt install -y pkg-config build-essential libpixman-1-0 libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN yarn install
 """
 
@@ -133,8 +133,8 @@ class Markeddbf29d91(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:24-bullseye
 RUN apt update && apt install -y git {X11_DEPS}
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm install
 RUN npm test
 """
@@ -170,8 +170,8 @@ class Babel2ea3fc8f(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:20-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN make bootstrap
 RUN make build
 """
@@ -295,8 +295,8 @@ class Svelte6c9717a9(JavaScriptProfile):
         return f"""FROM node:18-bullseye
 RUN apt update && apt install -y git
 RUN npm install -g pnpm@10.4.0
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN pnpm install
 RUN pnpm playwright install chromium
 RUN pnpm exec playwright install-deps
@@ -332,8 +332,8 @@ class Wretch661865a6(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:22-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm install
 RUN npm run build
 """
@@ -353,8 +353,8 @@ class Html5Boilerplateac08a17c(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:22-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm ci
 """
 
@@ -376,8 +376,8 @@ class HighlightJS5697ae51(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:22-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm install
 RUN npm run build
 """
@@ -400,8 +400,8 @@ class Prism31b467fa(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:22-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm ci
 RUN npm run build
 """
@@ -421,8 +421,8 @@ class ChromaJS498427ea(JavaScriptProfile):
     def dockerfile(self):
         return f"""FROM node:22-bullseye
 RUN apt update && apt install -y git
-RUN git clone https://github.com/{self.mirror_name} /testbed
-WORKDIR /testbed
+RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
+WORKDIR /{ENV_NAME}
 RUN npm install
 RUN npm run build
 """

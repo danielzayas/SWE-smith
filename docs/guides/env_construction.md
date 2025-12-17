@@ -18,20 +18,21 @@ Profiles exist for JavaScript, Rust, Java, etc., but there is no `try_install_*`
 ## Create an Execution Environment
 First, create the conda environment for the target repository.
 ```bash
-python -m swesmith.build_repo.try_install_py Instagram/MonkeyType install_repo.sh \
+python -m swesmith.build_repo.try_install_py Instagram/MonkeyType configs/install_repo.sh \
     --commit 70c3acf62950be5dfb28743c7a719bfdecebcd84
 ```
 where `install_repo.sh` is the script that installs the repository.
 ([Example](https://github.com/SWE-bench/SWE-smith/blob/main/configs/install_repo.sh))
 
-If successful, two artifacts will be produced under `logs/build_repo/records/`:
+If successful, two artifacts will be produced under `logs/build_repo/env/<org>__<repo>.<hash>`:
+
 * `sweenv_[repo + commit].yml`: A dump of the conda environment that was created.
 * `sweenv_[repo + commit].sh`: A log of the installation process.
 
 Next, run the following command to create a Docker image for the repository.
 
 ```bash
-python -m swesmith.build_repo.create_images --repos Instagram/MonkeyType
+python -m swesmith.build_repo.create_images
 ```
 
 Alternatively, `create_images.py` is the entrypoint for building (and optionally pushing) environment images from the registered `RepoProfile` set:
