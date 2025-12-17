@@ -59,7 +59,7 @@ Within the container, run the testing suite (e.g. `pytest`) to ensure that the c
     python -m swesmith.build_repo.download_images
     ```
 
-## What goes into the image: OS-level deps vs env deps
+### What goes into the image: OS-level deps vs env deps
 
 When SWE-smith builds an environment image for a repo, it may install dependencies in **two different places**:
 
@@ -76,7 +76,7 @@ This distinction matters because some repos need **system binaries or headers** 
 
 In SWE-smith, these OS-level installs are typically expressed in a repo profile’s `install_cmds` as `apt-get ...` lines alongside the `pip install ...` lines.
 
-## How repo profiles drive Docker builds (and why OS deps get reused)
+### How repo profiles drive Docker builds (and why OS deps get reused)
 
 Each `RepoProfile` supplies a list of shell commands (`install_cmds`) that become the **setup script** executed during the Docker build for that image (e.g., cloning the mirrored repo, then running the profile’s install steps).
 
@@ -87,7 +87,7 @@ Because `apt-get` runs during the Docker build, system packages land in the **im
 
 If you see runtime failures like “missing `gs`/`dot`/headers”, check whether the repo’s profile needs extra OS dependencies in its `install_cmds`.
 
-## Image naming, commit alignment, and “reuse” behavior
+### Image naming, commit alignment, and “reuse” behavior
 
 SWE-smith intentionally builds images **pinned to a specific upstream commit**:
 
@@ -99,6 +99,63 @@ SWE-smith intentionally builds images **pinned to a specific upstream commit**:
 Practically, this means images are **per repo + per commit** (e.g. `swesmith.x86_64.<repo>.<commit>`), not a single “rolling” image shared across many commits. This design favors deterministic, reproducible builds and avoids having to guess which historical commits can safely share an environment.
 
 Related: when reproducing bugs from PRs, SWE-smith often applies a patch (including “reversal patches” when a PR was merged) **on top of the mirrored commit’s environment**, rather than checking out the PR’s original historical base commit. The environment corresponds to the profile’s pinned commit; the patch adjusts repo content to match the target bug state.
+
+### Example Docker images
+
+#### Python profile Docker image for python-docx
+
+Docker image "jyangballin/swesmith.x86_64.python-openxml_1776_python-docx.0cf6d71f" (or alternatively "[danielzayas/swesmith.x86_64.python-openxml_1776_python-docx.0cf6d71f](https://hub.docker.com/r/danielzayas/swesmith.x86_64.python-openxml_1776_python-docx.0cf6d71f)") supports 1686 different tasks in the SWE-smith [dataset]https://huggingface.co/datasets/SWE-bench/SWE-smith/viewer/default/train?row=0&views%5B%5D=train&sql=--+The+SQL+console+is+powered+by+DuckDB+WASM+and+runs+entirely+in+the+browser.%0A--+Get+started+by+typing+a+query+or+selecting+a+view+from+the+options+below.%0A%0A--+top+repos%0A--+SELECT+repo%2C+count%28*%29+FROM+train+group+by+1+order+by+2+desc%3B%0A%0ASELECT+*+%0AFROM+train+%0Awhere+repo+like+%27swesmith%2Fpython-openxml__python-docx.0cf6d71f%25%27%0Aand+instance_id+like+%27%25combine_module__j1zdp70p%25%27%0A%3B&sql_row=0:
+```sql
+SELECT count(*) FROM train where repo like 'swesmith/python-openxml__python-docx.0cf6d71f%';
+```
+
+For example, task instance_id 'python-openxml__python-docx.0cf6d71f.combine_module__j1zdp70p' contains the shared `image_name` value. The `patch`, `FAIL_TO_PASS`, and `PASS_TO_PASS` values are unique to the specific task instance:
+```sql
+SELECT * 
+FROM train 
+where repo like 'swesmith/python-openxml__python-docx.0cf6d71f%'
+and instance_id like '%combine_module__j1zdp70p%';
+```
+
+The docker image file system contains:
+- The mirrored repository source code and `.git` directory within `/testbed/`. Current HEAD of main branch at 1556718dc31ebfb32773a142b8439c1ea63c574d, which is expected to contain the bug without the F2P tests. 
+- OS: Ubuntu 22.04.5 LTS (Jammy Jellyfish)
+- Instruction Set Architecture x86_64 (Linux/amd64)
+- Kernel: Linux 6.12.54-linuxkit
+- Many CLI applications for development (git, curl, make, gcc, wget, etc.), utilities (tar, sed, awk, etc.), and some Ubuntu/Debian packages that provide headers and libraries needed for building Python packages the C depedencies (libpython3-dev, libpython3.10-dev).
+- Conda application and base environment installed in `/opt/miniconda3`.
+- Python 3.10.19, pip, wheel, and setuptools installed in `/opt/miniconda3/envs/testbed/`.
+- Installed dependencies in `/opt/miniconda3/envs/testbed/`.
+
+#### Java profile Docker image for gson
+
+Dcoker image "jyangballin/swesmith.x86_64.google_1776_gson.dd2fe59c" supports 11 different tasks in the SWE-smith [dataset](https://huggingface.co/datasets/SWE-bench/SWE-smith/viewer/default/train?row=2&views%5B%5D=train&sql=--+The+SQL+console+is+powered+by+DuckDB+WASM+and+runs+entirely+in+the+browser.%0A--+Get+started+by+typing+a+query+or+selecting+a+view+from+the+options+below.%0ASELECT+count%28*%29+%0AFROM+train+%0Awhere+repo+like+%27swesmith%2Fgoogle__gson.dd2fe59c%25%27%0A%3B%0A)
+```sql
+SELECT count(*) FROM train where repo like 'swesmith/google__gson.dd2fe59c%';
+```
+For exampe, task instance_id 'google__gson.dd2fe59c.lm_modify__06bnj4og' contains the shared `image_name` value. 
+
+`Gsondd2fe59c.dockerfile` code in `profiles/java.py` specifies using the Maven CLI application to build the application without tests:
+```
+...
+WORKDIR /testbed
+RUN mvn clean install -B -pl gson -DskipTests -am
+...
+```
+- -B: “batch mode” (non-interactive; cleaner logs in CI/Docker builds).
+- -pl gson: “projects list” — only build the Maven module named gson (in a multi-module repo).
+- -DskipTests: set the skipTests property so tests are not run during the build lifecycle.
+- -am: “also make” — if gson depends on other modules in the same multi-module build, Maven will also build the required upstream modules so gson can compile/package.
+
+The docker image file system contains:
+- The mirrored repository source code and `.git` directory within `/testbed/`. Current HEAD of main branch at c83d56de38560cc41be869c9d99f77f7d32229a2, which is expected to contain the bug without the F2P tests. 
+- OS: Ubuntu 22.04.5 LTS (Jammy Jellyfish)
+- Instruction Set Architecture: x86_64 (Linux/amd64)
+- Kernel: Linux 6.12.54-linuxkit
+- Many CLI applications for development (git, curl, wget, make, gcc, maven, java, javac, etc.), utilities (tar, sed, awk, etc.), and Java development tools (OpenJDK 11, Apache Maven 3.6.3).
+- `/testbed/gson/target/` contains the module build output (compiled classes, JARs, generated sources, Maven metadata).
+- `/root/.m2/repository/` contains downloaded dependencies (jars/poms). Maven's downloaded dependencies are cached in this special Maven directory.
+- `/testbed/target/` contains parent project build artifacts (minimal).
 
 ## Appendix: Missing Python Dependency Root Cause Analysis & Fix
 
