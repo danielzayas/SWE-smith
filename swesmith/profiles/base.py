@@ -577,6 +577,7 @@ class Registry(UserDict):
             "CSharpProfile",
             "CppProfile",
             "CProfile",
+            "KotlinProfile",
         }:
             # TODO: Update for new languages
             return

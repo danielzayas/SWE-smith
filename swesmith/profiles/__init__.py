@@ -17,5 +17,6 @@ from . import php
 from . import python
 from . import golang
 from . import rust
+from . import kotlin
 
 __all__ = ["RepoProfile", "registry"]
