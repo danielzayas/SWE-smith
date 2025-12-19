@@ -1,7 +1,9 @@
 # Files
-.env
 .DS_Store
+Thumbs.db
 .api_key
+*.bak
+*.tmp
 
 # Folders
 hidden/
@@ -9,6 +11,9 @@ logs/
 notebooks/
 repos/
 .idea/
+.vscode/
+.cursor/
+.history/
 
 # General python
 
@@ -140,6 +145,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.uv
 env/
 venv/
 ENV/
