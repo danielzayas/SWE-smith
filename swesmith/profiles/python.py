@@ -1344,6 +1344,19 @@ class String2Stringc4a72f59(PythonProfile):
     )
 
 
+@dataclass
+class Pytorch05b94c54(PythonProfile):
+    owner: str = "pytorch"
+    repo: str = "pytorch"
+    commit: str = "05b94c54a857651cd7f3c6207eb3bac78e2afd83"
+    install_cmds: list = field(
+        default_factory=lambda: [
+            "python -m pip install --no-build-isolation -v -e .",
+        ]
+    )
+    min_testing: bool = True
+
+
 # Register all Python profiles with the global registry
 for name, obj in list(globals().items()):
     if (
