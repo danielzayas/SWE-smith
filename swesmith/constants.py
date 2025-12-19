@@ -28,6 +28,8 @@ LOG_TEST_OUTPUT_PRE_GOLD = "test_output_pre_gold.txt"
 MAX_INPUT_TOKENS = 128000
 # Changed ORG_NAME_DH to danielzayas because I don't have write access to "jyangballin" docker acccount
 ORG_NAME_DH = "danielzayas"
+# Added ORG_NAME_DH_BASE_IMAGE because all devs have read access to the "jyangballin" docker account
+ORG_NAME_DH_BASE_IMAGE = "jyangballin"
 # Changed ORG_NAME_GH to danielzayas because I don't have write access to the SWE-smith org
 ORG_NAME_GH = "danielzayas"
 PREFIX_BUG = "bug"
