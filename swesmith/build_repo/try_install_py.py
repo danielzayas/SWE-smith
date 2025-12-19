@@ -174,15 +174,17 @@ def main(
         # If installation succeeded, export the conda environment + record install script
         os.chdir("..")
         p._env_yml.parent.mkdir(parents=True, exist_ok=True)
+        # Use --no-builds to export without platform-specific build strings
+        # This allows the YAML to work across platforms (macOS -> Linux Docker)
         subprocess.run(
-            f"conda env export -n {ENV_NAME} > {p._env_yml}",
+            f"conda env export -n {ENV_NAME} --no-builds > {p._env_yml}",
             check=True,
             shell=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-        # Edit env.yml such that name of package is excluded from `pip`
+        # Edit env.yml such that name of package is excluded from `pip` and prefix is removed
         with open(p._env_yml, "r") as f:
             lines = f.readlines()
         with open(p._env_yml, "w") as f:
@@ -191,6 +193,9 @@ def main(
                 if line.strip().startswith(f"- {p.repo}==") or line.strip().startswith(
                     f"- {p.repo.lower()}=="
                 ):
+                    continue
+                # Remove platform-specific prefix line (macOS/Linux paths)
+                if line.strip().startswith("prefix:"):
                     continue
                 f.write(line)
 
