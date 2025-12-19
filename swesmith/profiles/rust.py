@@ -43,13 +43,6 @@ RUN {self.test_cmd} || true
 
 
 @dataclass
-class Anyhow1d7ef1db(RustProfile):
-    owner: str = "dtolnay"
-    repo: str = "anyhow"
-    commit: str = "1d7ef1db5414ac155ad6254685673c90ea4c7d77"
-
-
-@dataclass
 class Base64cac5ff84(RustProfile):
     owner: str = "marshallpierce"
     repo: str = "rust-base64"
@@ -176,13 +169,6 @@ class Rpds3e7c8ae6(RustProfile):
     owner: str = "orium"
     repo: str = "rpds"
     commit: str = "3e7c8ae693cdc6e1b255c87279b6ad8aded6401d"
-
-
-@dataclass
-class Rayon1fd20485(RustProfile):
-    owner: str = "rayon-rs"
-    repo: str = "rayon"
-    commit: str = "1fd20485bd0bb55541d8080a31e104c7b758cb48"
 
 
 @dataclass
