@@ -18,14 +18,17 @@ echo "> Creating conda env 'testbed' with python=${PYTHON_VERSION}"
 conda create -n testbed "python=${PYTHON_VERSION}" -yq
 conda activate testbed
 
+# Use conda Python explicitly instead of other Python installations
+CONDA_PYTHON="$CONDA_PREFIX/bin/python"
+
 echo "> Installing repo in editable mode"
-python -m pip install -e .
+"$CONDA_PYTHON" -m pip install -e .
 
 echo "> Installing test dependencies (extras -> requirements-test.txt -> profile hook)"
-if python -m pip install -e ".[test]"; then
+if "$CONDA_PYTHON" -m pip install -e ".[test]"; then
     echo "> Installed test dependencies via extras [test]"
 elif [ -f "requirements-test.txt" ]; then
-    python -m pip install -r requirements-test.txt
+    "$CONDA_PYTHON" -m pip install -r requirements-test.txt
     echo "> Installed test dependencies from requirements-test.txt"
 elif [ -n "${SWESMITH_PROFILE_INSTALL_CMDS:-}" ]; then
     echo "> Running profile-provided install_cmds: ${SWESMITH_PROFILE_INSTALL_CMDS}"
@@ -36,8 +39,8 @@ fi
 
 if [ -n "${SWESMITH_EXTRA_TEST_DEPS:-}" ]; then
     echo "> Installing extra test deps: ${SWESMITH_EXTRA_TEST_DEPS}"
-    python -m pip install ${SWESMITH_EXTRA_TEST_DEPS}
+    "$CONDA_PYTHON" -m pip install ${SWESMITH_EXTRA_TEST_DEPS}
 fi
 
 echo "> Ensuring pytest available for smoke"
-python -m pip install pytest
+"$CONDA_PYTHON" -m pip install pytest
