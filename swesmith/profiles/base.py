@@ -571,6 +571,12 @@ class Registry(UserDict):
             "PythonProfile",
             "GoProfile",
             "RustProfile",
+            "JavaProfile",
+            "JavaScriptProfile",
+            "PhpProfile",
+            "CSharpProfile",
+            "CppProfile",
+            "CProfile",
         }:
             # TODO: Update for new languages
             return
