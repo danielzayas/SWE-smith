@@ -21,7 +21,6 @@ class OkHttp8e0cc1b3(KotlinProfile):
     repo: str = "okhttp"
     commit: str = "8e0cc1b398a10c27a0921a14bc53ca770169d83c"
     # Broad test command; avoid container tests (Docker-in-Docker) during evaluation.
-    # Resource caps help avoid OOM in constrained Docker environments.
     test_cmd: str = './gradlew test --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g" -x :container-tests:test'
     eval_sets: set[str] = field(
         default_factory=lambda: {"SWE-bench/SWE-bench_Multilingual"}
@@ -29,49 +28,21 @@ class OkHttp8e0cc1b3(KotlinProfile):
 
     @property
     def dockerfile(self):
-        # NOTE: SWE-smith targets linux/amd64 images; pin platform explicitly here.
-        return f"""FROM --platform=linux/amd64 ubuntu:22.04
-ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-
-# OS-level deps + JDK 21
-RUN apt-get update && apt-get install -y \\
-    git curl wget unzip zip ca-certificates \\
-    openjdk-21-jdk \\
-    libstdc++6 zlib1g \\
-    libc6-i386 lib32z1 lib32stdc++6 \\
-  && rm -rf /var/lib/apt/lists/*
+        # Use the Kotlin/Android base image to avoid re-downloading JDK + Android SDK on every repo build.
+        # TODO @john-b-yang: please push this kotlin base image to 'jyangballin/swesmith-kotlin-base'
+        # because we'll want to use the ORG_NAME_DH_BASE_IMAGE or similar from `swesmith/constants.py`
+        return f"""FROM --platform={self.pltf} danielzayas/swesmith-kotlin-base:latest
 
 RUN git clone https://github.com/{self.mirror_name} /{ENV_NAME}
 WORKDIR /{ENV_NAME}
 
-# Android SDK command-line tools
-ENV ANDROID_SDK_ROOT=/opt/android-sdk
-ENV ANDROID_HOME=/opt/android-sdk
-ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-
-RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \\
-    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline.zip && \\
-    unzip -q /tmp/cmdline.zip -d $ANDROID_SDK_ROOT/cmdline-tools && \\
-    mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest && \\
-    rm /tmp/cmdline.zip
-
-# Pre-configure Android SDK location for Gradle
-RUN echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-# Accept licenses and install SDK packages needed by OkHttp build (compileSdk 35/36)
-RUN yes | sdkmanager --licenses || true
-RUN sdkmanager \\
-    "platform-tools" \\
-    "platforms;android-35" \\
-    "platforms;android-36" \\
-    "build-tools;35.0.0" \\
-    "build-tools;36.0.0"
-
-# Build (no tests) during image build for deterministic compile validation.
-# Resource caps: helps avoid OOM in constrained Docker environments.
-RUN chmod +x ./gradlew && ./gradlew clean assemble --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g" -x :container-tests:test
+# Gradle cache mount (BuildKit) to speed up iterative builds.
+# Add --info/--stacktrace to make plugin-resolution failures diagnosable in build logs.
+RUN --mount=type=cache,target=/root/.gradle \\
+    chmod +x ./gradlew && \\
+    ./gradlew clean assemble --no-daemon --info --stacktrace \\
+      -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g" \\
+      -x :container-tests:test
 """
 
     def log_parser(self, log: str) -> dict[str, str]:
