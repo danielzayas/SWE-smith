@@ -195,3 +195,6 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+# Ignore files used to build and push base docker images to remote Docker Hub
+swesmith/profiles/kotlin_base.dockerfile
+scripts/build_kotlin_base.sh
