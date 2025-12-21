@@ -15,18 +15,20 @@ from swesmith.profiles import registry
 from swebench.harness.constants import KEY_INSTANCE_ID
 
 
-def build_profile_image(profile, push=False):
+def build_profile_image(profile, push=False, force_mirror=False):
     """
     Build a Docker image for a specific profile.
 
     Args:
         profile: A RepoProfile instance
+        push: Whether to push the image to Docker Hub
+        force_mirror: Whether to force re-creation of the GitHub mirror
 
     Returns:
         tuple: (profile_name, success: bool, error_message: str)
     """
     try:
-        profile.create_mirror()
+        profile.create_mirror(force=force_mirror)
         profile.build_image()
         if push:
             profile.push_image()
@@ -42,6 +44,7 @@ def build_all_images(
     instance_ids: list[str] | None = None,
     proceed=False,
     push=False,
+    force_mirror=False,
 ):
     """
     Build Docker images for all registered profiles in parallel.
@@ -51,6 +54,8 @@ def build_all_images(
         profile_filter: Optional list of profile mirror names to filter by
         instance_ids: Optional list of SWE-bench instance_ids to filter by
         proceed: Whether to proceed without confirmation
+        push: Whether to push built images to Docker Hub
+        force_mirror: Whether to force re-creation of the GitHub mirror
 
     Returns:
         tuple: (successful_builds, failed_builds)
@@ -121,7 +126,7 @@ def build_all_images(
         with ThreadPoolExecutor(max_workers=workers) as executor:
             # Submit all build tasks
             future_to_profile = {
-                executor.submit(build_profile_image, profile, push): profile
+                executor.submit(build_profile_image, profile, push, force_mirror): profile
                 for profile in profiles_to_build
             }
 
@@ -181,6 +186,11 @@ def main():
         help="Push built images to Docker Hub after building (default: False)",
     )
     parser.add_argument(
+        "--force-mirror",
+        action="store_true",
+        help="Force re-creation of the GitHub mirror (default: False)",
+    )
+    parser.add_argument(
         "--list-envs", action="store_true", help="List all available profiles and exit"
     )
 
@@ -198,6 +208,7 @@ def main():
         instance_ids=args.instance_ids,
         proceed=args.proceed,
         push=args.push,
+        force_mirror=args.force_mirror,
     )
 
     if failed:

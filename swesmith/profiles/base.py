@@ -227,12 +227,13 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
             raise RuntimeError("GITHUB_TOKEN is required for GitHub operations.")
         return f"https://{token}@github.com/{self.mirror_name}.git"
 
-    def create_mirror(self):
+    def create_mirror(self, force: bool = False):
         """
         Create a mirror of this repository at the specified commit.
-        
-        TODO @danielzayas: Change logic to get_or_create_mirror. I.e. if the mirror already exists, use it, otherwise create it.
         """
+        if self._mirror_exists() and not force:
+            return
+
         if self.repo_name in os.listdir():
             shutil.rmtree(self.repo_name)
         try:
