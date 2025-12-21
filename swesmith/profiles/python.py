@@ -1345,13 +1345,14 @@ class String2Stringc4a72f59(PythonProfile):
 
 
 @dataclass
-class Pytorch05b94c54(PythonProfile):
+class Pytorchc8a37a2d(PythonProfile):
     owner: str = "pytorch"
     repo: str = "pytorch"
-    commit: str = "05b94c54a857651cd7f3c6207eb3bac78e2afd83"
+    commit: str = "c8a37a2d5ee91d61bad92e80e608a38286f079a6"
     install_cmds: list = field(
         default_factory=lambda: [
-            "python -m pip install --no-build-isolation -v -e .",
+            "conda install -y cmake ninja pyyaml numpy six typing-extensions",
+            "MAX_JOBS=4 python -m pip install --no-build-isolation -v -e .",
         ]
     )
     min_testing: bool = True
