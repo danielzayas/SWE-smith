@@ -251,8 +251,6 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
             f"git clone https://github.com/{self.owner}/{self.repo}.git {self.repo_name}",
             shell=True,
             check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
 
         # Build the git commands
@@ -263,18 +261,20 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
 
         # Add submodule update if submodules exist
         if os.path.exists(os.path.join(self.repo_name, ".gitmodules")):
-            git_cmds.append("git submodule update --init --recursive")
+            git_cmds.append("git submodule update --init --recursive --depth 1")
 
         # Add the rest of the commands
         git_cmds.extend(
             [
-                "rm -rf .git",
+                'find . -name ".git" -exec rm -rf {} +',
+                "rm -rf .gitmodules",
+                'find . -name ".gitignore" -exec rm -rf {} +',
                 "git init",
                 'git config user.name "swesmith"',
                 'git config user.email "swesmith@anon.com"',
                 "rm -rf .github/workflows",
                 "rm -rf .github/dependabot.y*",
-                "git add .",
+                "git add -f .",
                 "git commit --no-gpg-sign -m 'Initial commit'",
                 "git branch -M main",
                 f"git remote add origin {self._get_mirror_https_url()}",
@@ -287,18 +287,14 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
             "; ".join(git_cmds),
             shell=True,
             check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
 
-        # Clean up
-        subprocess.run(
-            f"rm -rf {self.repo_name}",
-            shell=True,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        # Clean up (Commented out for debugging)
+        # subprocess.run(
+        #     f"rm -rf {self.repo_name}",
+        #     shell=True,
+        #     check=True,
+        # )
 
     def clone(self, dest: str | None = None) -> tuple[str, bool]:
         """Clone repository locally"""
