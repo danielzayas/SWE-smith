@@ -20,8 +20,11 @@ class OkHttp8e0cc1b3(KotlinProfile):
     owner: str = "danielzayas"
     repo: str = "okhttp"
     commit: str = "8e0cc1b398a10c27a0921a14bc53ca770169d83c"
+    timeout: int = 1200
+    timeout_ref: int = 1800  # Increase reference run timeout for emulation
     # Broad test command; avoid container tests (Docker-in-Docker) during evaluation.
-    test_cmd: str = './gradlew test --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g" -x :container-tests:test'
+    # clean is needed to avoid cached test results.
+    test_cmd: str = './gradlew clean :okhttp:jvmTest --info --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g"'
     eval_sets: set[str] = field(
         default_factory=lambda: {"SWE-bench/SWE-bench_Multilingual"}
     )
