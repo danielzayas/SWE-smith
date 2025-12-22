@@ -137,15 +137,28 @@ def run_patch_in_container(
 
         # Start docker container
         rp.pull_image()
-        container = client.containers.create(
-            image=rp.image_name,
-            name=container_name,
-            user=DOCKER_USER,
-            detach=True,
-            command="tail -f /dev/null",
-            platform="linux/x86_64",
-            mem_limit="10g",
-        )
+        try:
+            container = client.containers.create(
+                image=rp.image_name,
+                name=container_name,
+                user=DOCKER_USER,
+                detach=True,
+                command="tail -f /dev/null",
+                platform=rp.pltf,
+                mem_limit="10g",
+            )
+        except Exception as e:
+            if "platform" in str(e).lower():
+                container = client.containers.create(
+                    image=rp.image_name,
+                    name=container_name,
+                    user=DOCKER_USER,
+                    detach=True,
+                    command="tail -f /dev/null",
+                    mem_limit="10g",
+                )
+            else:
+                raise e
         container.start()
 
         token = os.getenv("GITHUB_TOKEN")

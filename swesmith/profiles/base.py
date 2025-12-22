@@ -371,15 +371,28 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
         instance_id = instance[KEY_INSTANCE_ID]
         # Use unique suffix to avoid container name conflicts in parallel execution
         container_name = f"{instance_id}.{uuid.uuid4().hex[:8]}"
-        container = client.containers.create(
-            image=self.image_name,
-            name=container_name,
-            user=DOCKER_USER,
-            detach=True,
-            command="tail -f /dev/null",
-            platform="linux/x86_64",
-            mem_limit="10g",
-        )
+        try:
+            container = client.containers.create(
+                image=self.image_name,
+                name=container_name,
+                user=DOCKER_USER,
+                detach=True,
+                command="tail -f /dev/null",
+                platform=self.pltf,
+                mem_limit="10g",
+            )
+        except Exception as e:
+            if "platform" in str(e).lower():
+                container = client.containers.create(
+                    image=self.image_name,
+                    name=container_name,
+                    user=DOCKER_USER,
+                    detach=True,
+                    command="tail -f /dev/null",
+                    mem_limit="10g",
+                )
+            else:
+                raise e
         container.start()
         val = container.exec_run(
             f"git checkout {instance_id}",
