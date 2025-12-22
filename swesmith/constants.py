@@ -18,6 +18,7 @@ HF_DATASET = "SWE-bench/SWE-smith"
 INSTANCE_REF = "instance_ref"
 KEY_IMAGE_NAME = "image_name"
 KEY_PATCH = "patch"
+KEY_TEST_PATCH = "test_patch"
 KEY_TIMED_OUT = "timed_out"
 LOG_DIR_BUG_GEN = Path("logs/bug_gen")
 LOG_DIR_ENV = Path("logs/build_images/env")

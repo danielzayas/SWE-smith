@@ -32,6 +32,7 @@ from swesmith.bug_gen.mirror.prompts import (
 from swesmith.constants import (
     LOG_DIR_BUG_GEN,
     KEY_PATCH,
+    KEY_TEST_PATCH,
     PREFIX_BUG,
     PREFIX_METADATA,
     INSTANCE_REF,
@@ -70,15 +71,20 @@ worker_tempdirs = {}
 def should_attempt_recovery(inst, repo):
     """
     Attempt if the following criteria are met:
+    * A 'test_patch' field exists and is non-empty (required for FAIL_TO_PASS tests)
     * Fewer than 8 files are changed
     * Fewer than 500 lines are changed
     * No changed file is >10000 lines
     """
+    if KEY_TEST_PATCH not in inst or not inst[KEY_TEST_PATCH].strip():
+        return False, f"Missing or empty '{KEY_TEST_PATCH}' field (required for FAIL_TO_PASS tests)"
+
     patch = PatchSet(inst[KEY_PATCH])
     rp = registry.get(repo)
     num_ext_edited = len([x for x in patch if any(x.path.endswith(ext) for ext in rp.exts)])
     if num_ext_edited == 0:
         return False, f"No {', '.join(rp.exts)} files changed"
+
     if num_ext_edited > 8:
         return False, "Too many files changed (>8 files)"
     lines_changed = 0
