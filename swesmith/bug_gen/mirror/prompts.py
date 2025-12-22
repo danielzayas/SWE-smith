@@ -15,7 +15,7 @@ Diff patch will be provided here.
 
 OUTPUT:
 The fully rewritten source code, after undoing all changes specified in the diff.
-The output should be valid Python code.
+The output should be valid code in the original language of the file.
 """
 
 DEMO_PROMPT = """Demonstration:

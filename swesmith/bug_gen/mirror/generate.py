@@ -75,10 +75,11 @@ def should_attempt_recovery(inst, repo):
     * No changed file is >10000 lines
     """
     patch = PatchSet(inst[KEY_PATCH])
-    num_py_edited = len([x for x in patch if x.path.endswith(".py")])
-    if num_py_edited == 0:
-        return False, "No Python files changed"
-    if num_py_edited > 8:
+    rp = registry.get(repo)
+    num_ext_edited = len([x for x in patch if any(x.path.endswith(ext) for ext in rp.exts)])
+    if num_ext_edited == 0:
+        return False, f"No {', '.join(rp.exts)} files changed"
+    if num_ext_edited > 8:
         return False, "Too many files changed (>8 files)"
     lines_changed = 0
     for file_diff in patch:
@@ -114,12 +115,20 @@ def recover_sweb_inst(inst, repo, model, api_key=None, log_path=None):
     patch = PatchSet(inst[KEY_PATCH])
 
     def extract_output(output):
-        code_block_pat = re.compile(r"^```python\s*\n([\s\S]*)^```\s*$", re.MULTILINE)
+        code_block_pat = re.compile(r"^```\w*\s*\n([\s\S]*)^```\s*$", re.MULTILINE)
         if code_block_pat.search(output):
-            output = output.split("```python", 1)[1]
-            output = output.rsplit("```", 1)[0]
-            output = output.strip()
-            output = code_block_pat.sub("", output)
+            # Try to extract content between first ``` and last ```
+            try:
+                output = output.split("```", 1)[1]
+                # If there's a language tag, remove it
+                if "\n" in output:
+                    first_line = output.split("\n", 1)[0].strip()
+                    if first_line and not first_line.startswith(" "):
+                        output = output.split("\n", 1)[1]
+                output = output.rsplit("```", 1)[0]
+                output = output.strip()
+            except IndexError:
+                pass
         return output
 
     metadata = {KEY_COST: 0, KEY_REWRITES: {}, KEY_RECOVER_STATUS: RECOVER_SUCCESS}
@@ -157,8 +166,9 @@ def recover_sweb_inst(inst, repo, model, api_key=None, log_path=None):
                 patch_files.append(patch_path)
             continue
 
-        if not os.path.exists(file_path) or not file_path.endswith(".py"):
-            # Skip over edits to files that don't exist or are not Python files
+        rp = registry.get(repo)
+        if not os.path.exists(file_path) or not any(file_path.endswith(ext) for ext in rp.exts):
+            # Skip over edits to files that don't exist or are not in supported extensions
             continue
         file_content = open(file_path).read()
 
