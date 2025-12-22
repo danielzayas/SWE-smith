@@ -1,4 +1,4 @@
-model: anthropic/claude-sonnet-4-20250514
+model: google/gemini-3-flash-preview
 system: |-
   You are a software engineer helping to create a realistic dataset of synthetic GitHub issues.
   
