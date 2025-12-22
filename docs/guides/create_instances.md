@@ -109,41 +109,7 @@ There are 13 (and counting) in total.
 
 ## PR Mirroring
 
-**How does it work?**
-<div style="text-align:center">
-  <img src="../../assets/pr_mirror.png" alt="SWE-smith" style="width:100%"/>
-</div>
-
-For a detailed deep-dive into the technical architecture, see [PR Mirroring](./pr_mirroring.md).
-
-This method leverages SWE-bench's [task collection script](https://github.com/SWE-bench/SWE-bench/blob/main/swebench/collect/run_get_tasks_pipeline.sh).
-
-Run the script for a repository, and it will create a `<repo>-task-instances.jsonl.all`.
-This file contains candidate task instances based on real pull requests (PRs) from the repository.
-A pull request is considered a candidate if
-
-* It has at least 1+ issue associated with it.
-* It edits at least 1+ code file.
-
-!!! note "Candidate criteria"
-    SWE-bench has slightly more stringent criteria for PRs that qualify as candidates.
-    Specifically, PRs must also change 1+ test file(s).
-    Because SWE-smith does rely on test file changes to identify breaking existing tests, we can attempt to recreate a broader
-    subset of PRs than what SWE-bench normally considers.
-
-We provide this file to SWE-smith.
-Per PR, we ask an LM to revert the PR's changes file by file.
-If this process succeeds, we create a candidate task instance that effectively undoes the PR.
-
-**How do I run it?**
-```bash
-python -m swesmith.bug_gen.mirror.generate $file \
-    --model openai/o3-mini
-```
-
-**What artifact(s) does it produce?**
-
-
+For a detailed deep-dive into the technical architecture and how to run it, see [PR Mirroring](./pr_mirroring.md).
 
 ## Combining Bugs
 
