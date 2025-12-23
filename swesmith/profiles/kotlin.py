@@ -17,7 +17,7 @@ class KotlinProfile(RepoProfile):
 
 @dataclass
 class OkHttp8e0cc1b3(KotlinProfile):
-    owner: str = "danielzayas"
+    owner: str = "square"
     repo: str = "okhttp"
     commit: str = "8e0cc1b398a10c27a0921a14bc53ca770169d83c"
     timeout: int = 1200
