@@ -42,7 +42,7 @@ python -m swesmith.build_repo.create_images --profiles Instagram/MonkeyType --pu
 ```
 
 This command will create two artifacts:
-1. A mirror of the original repository at the specified commit, created under [`swesmith`](https://github.com/orgs/swesmith/repositories). To change the organization, you can...
+1. A mirror of the original repository at the specified commit, created under a Github organization (e.g. [`swesmith`](https://github.com/orgs/swesmith/repositories) Github org). To change the organization, you can...
     * Pass in an `--org` argument, or
     * (If built from source) Change `ORG_NAME_GH` in `swesmith/constants.py`
 2. A Docker image (`swesmith.x86_64.<repo>.<commit>`) which contains the installed codebase.
