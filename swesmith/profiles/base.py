@@ -439,10 +439,15 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
         """Check whether the file path corresponds to a testing related file"""
         if len(self.exts) > 1 and not any([file.endswith(ext) for ext in self.exts]):
             return False
-        if file.lower().startswith("test") or file.rsplit(".", 1)[0].endswith("test"):
+
+        # Case-insensitive check for file name (e.g. TrailersTest.kt, test_something.py)
+        filename_no_ext = file.rsplit(".", 1)[0].lower()
+        if filename_no_ext.startswith("test") or filename_no_ext.endswith("test"):
             return True
-        dirs = root.split("/")
-        if any([x in dirs for x in ["tests", "test", "specs"]]):
+
+        # Check directory names (e.g. src/jvmTest, tests/, specs/)
+        dirs = [d.lower() for d in root.split("/")]
+        if any(["test" in d or "spec" in d for d in dirs]):
             return True
         return False
 
