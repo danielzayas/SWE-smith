@@ -12,7 +12,7 @@ Given the docker image and repository mirror from [env_construction](./env_const
 
 ### get_tasks_pipeline
 
-We leverage the [get_tasks_pipeline.py](https://github.com/SWE-bench/SWE-bench/blob/main/swebench/collect/get_tasks_pipeline.py) command from SWE-bench. It uses a Large Language Model (LLM) to **reverse** the changes introduced by the PR, effectively re-introducing the bug into the modern codebase. Per PR, we ask an LM to revert the PR's changes file by file.
+We leverage the [get_tasks_pipeline.py](https://github.com/SWE-bench/SWE-bench/blob/main/swebench/collect/get_tasks_pipeline.py) command from SWE-bench to collect cadidate task instances.
 
 A pull request is considered a candidate if:
 
@@ -34,7 +34,7 @@ python -m swesmith.bug_gen.mirror.generate $file \
 
 For example:
 ```shell
-python -m swesmith.bug_gen.mirror.generate okhttp-8904.jsonl \
+python -m swesmith.bug_gen.mirror.generate SWE-bench/outputs/okhttp_pr_8904/tasks/okhttp-task-instances.jsonl \
     --model gemini/gemini-3-flash-preview
 ```
 
@@ -79,7 +79,7 @@ graph TD
 If the repository is currently in a state where the PR has *not* been applied (e.g., the PR is unmerged, or the repo head is an ancestor), we can sometimes apply the PR patch directly. In this case, the "bug" is the state before the patch, and the patch itself is the solution.
 
 ### Path 2: Recovery (The "Mirror")
-If the repository already contains the changes (e.g., the PR was merged), we must **remove** them to reproduce the bug. This is the primary function of PR Mirroring. The LLM analyzes the diff and rewrites the code to its state *before* the PR, creating a "Reversal Patch".
+If the repository already contains the changes (e.g., the PR was merged), we must **remove** them to reproduce the bug. This is the primary function of PR Mirroring. The Large Language Model (LLM) analyzes the diff and rewrites the code to its state *before* the PR, creating a "Reversal Patch".
 
 ## Key Components
 
@@ -91,10 +91,11 @@ The main orchestrator function located in `swesmith.bug_gen.mirror.generate`. It
 4.  Decides whether to use the **Direct Apply** path or the **Recovery** path.
 
 ### `recover_sweb_inst`
+
 This function handles the logic for the Recovery path. It iterates through every file modified in the PR:
 -   **Added Files**: It removes them.
 -   **Removed Files**: It restores them (using content from the diff).
--   **Modified Files**: It invokes the LLM to rewrite the file content.
+-   **Modified Files**: It invokes the LLM to rewrite the file content. The LLM attempts to **reverse** the changes introduced by the PR, effectively re-introducing the bug into the modern codebase. Per PR, we ask an LM to revert the PR's changes file by file.
 
 The function returns a list of paths to .diff files generated during the mirroring process. These files are named using the pattern `{instance_id}_{idx}.diff`. Specifically, it creates and returns patches in three scenarios:
   1. Added Files (that already exist): If the PR adds a file that is already present in the current repo, it removes the file and generates a patch representing that removal (lines 146-154).
