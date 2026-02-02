@@ -3,6 +3,11 @@ Your task is to rewrite the entire source code while reversing the changes indic
 That is, if a line was added in the diff, remove it; if a line was removed, add it back; and if a line was modified, restore it to its previous state.
 
 DO NOT MAKE ANY OTHER CHANGES TO THE SOURCE CODE. If a line was not explicitly added or removed in the diff, it should remain unchanged in the output.
+Specifically:
+- DO NOT introduce any new imports that are not already in the file or explicitly restored from the diff.
+- DO NOT use any new APIs, methods, or symbols that are not already present in the file or restored from the diff.
+- DO NOT perform any refactoring or change any whitespace unless explicitly instructed by the diff.
+- Keep the code logic exactly as it was before the diff was applied.
 
 INPUT:
 <source_code>
@@ -68,9 +73,25 @@ INPUT:
 
 NOTES:
 - As a reminder, DO NOT MAKE ANY OTHER CHANGES TO THE SOURCE CODE. If a line was not explicitly added or removed in the diff, it should remain unchanged in the output.
+- Specifically:
+    * DO NOT introduce any new imports that are not already in the file or explicitly restored from the diff.
+    * DO NOT use any new APIs, methods, or symbols that are not already present in the file or restored from the diff.
+    * DO NOT perform any refactoring or change any whitespace unless explicitly instructed by the diff.
 - Only make changes based on lines that were:
     * Added (have a + in front of them)
     * Removed (have a - in front of them)
 - DO NOT PROVIDE ANY TEXT ASIDE FROM THE REWRITTEN FILE. ANSWER WITH ONLY THE REWRITTEN CODE.
+
+OUTPUT:"""
+
+RECOVERY_COMPILE_ERROR_PROMPT = """The previously generated code failed to compile with the following error:
+
+<error_logs>
+{}
+</error_logs>
+
+Please rewrite the source code again, ensuring that you undo the changes from the diff correctly and resolve the compilation error. 
+DO NOT MAKE ANY OTHER CHANGES TO THE SOURCE CODE. 
+DO NOT PROVIDE ANY TEXT ASIDE FROM THE REWRITTEN FILE. ANSWER WITH ONLY THE REWRITTEN CODE.
 
 OUTPUT:"""

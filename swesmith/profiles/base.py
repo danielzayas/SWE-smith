@@ -555,6 +555,15 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
     commit: str = ""
     test_cmd: str = ""
 
+    @property
+    def compile_cmd(self) -> str | None:
+        """Return the command to compile the repository."""
+        return None
+
+    def is_compilation_error(self, log: str) -> bool:
+        """Parse test output logs and extract relevant information."""
+        return False
+
     @abstractmethod
     def log_parser(self, log: str) -> dict[str, str]:
         """Parse test output logs and extract relevant information."""
@@ -600,6 +609,7 @@ class Registry(UserDict):
         p = profile_class()
         self.data[p.repo_name] = profile_class
         self.data[p.mirror_name] = profile_class
+        self.data[f"{p.owner}/{p.repo}"] = profile_class
 
     def get(self, key: str) -> RepoProfile:
         """Get a profile class by mirror name or repo name."""

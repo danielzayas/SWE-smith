@@ -44,7 +44,16 @@ def apply_code_change(candidate: CodeEntity, bug: BugRewrite) -> None:
 
 
 def apply_patches(repo: str, patch_files: list[str]) -> str | None:
-    """Apply multiple patches to a target local directory, and get the combined patch."""
+    """
+    Apply multiple patches to a target local directory, and get the combined patch.
+    
+    Args:
+        repo: The path to the repository to apply the patches to.
+        patch_files: A list of paths to the patch files to apply.
+
+    Returns:
+        The combined patch if successful, None otherwise.
+    """
     cwd = os.getcwd()
     os.chdir(repo)
     try:
@@ -97,6 +106,11 @@ def get_patch(repo: str, reset_changes: bool = False):
     ):
         raise FileNotFoundError(f"'{repo}' is not a valid Git repository.")
 
+    # Clean up any leftover temp patch files before adding changes to the index
+    patch_file = os.path.join(repo, TEMP_PATCH)
+    if os.path.exists(patch_file):
+        os.remove(patch_file)
+
     subprocess.run(["git", "-C", repo, "add", "-A"], check=True, **DEVNULL)
     patch = subprocess.run(
         ["git", "-C", repo, "diff", "--staged"],
@@ -116,6 +130,8 @@ def get_patch(repo: str, reset_changes: bool = False):
     with open(patch_file, "w") as f:
         f.write(patch)
     subprocess.run(["git", "-C", repo, "apply", TEMP_PATCH], check=True)
+    if os.path.exists(patch_file):
+        os.remove(patch_file)
     if reset_changes:
         subprocess.run(["git", "-C", repo, "reset", "--hard"], check=True, **DEVNULL)
         subprocess.run(["git", "-C", repo, "clean", "-fdx"], check=True, **DEVNULL)

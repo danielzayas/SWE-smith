@@ -14,6 +14,24 @@ class KotlinProfile(RepoProfile):
 
     exts: list[str] = field(default_factory=lambda: [".kt", ".java"])
 
+    def is_compilation_error(self, log: str) -> bool:
+        """
+        Check if the log indicates a Kotlin/Gradle compilation failure.
+        """
+        if "Compilation error" in log:
+            return True
+        
+        for line in log.splitlines():
+            line_stripped = line.strip()
+            line_lower = line_stripped.lower()
+            # Kotlin compiler error lines start with 'e: '
+            if line_lower.startswith("e: "):
+                return True
+            # Gradle task failure for compilation tasks
+            if line_lower.startswith("> task") and "failed" in line_lower and "compile" in line_lower:
+                return True
+        return False
+
 
 @dataclass
 class OkHttp8e0cc1b3(KotlinProfile):
@@ -25,6 +43,11 @@ class OkHttp8e0cc1b3(KotlinProfile):
     # Broad test command; avoid container tests (Docker-in-Docker) during evaluation.
     # clean is needed to avoid cached test results.
     test_cmd: str = './gradlew clean :okhttp:jvmTest --info --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g"'
+    
+    @property
+    def compile_cmd(self) -> str:
+        return './gradlew :okhttp:compileKotlinJvm --info --no-daemon -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g"'
+
     eval_sets: set[str] = field(
         default_factory=lambda: {"SWE-bench/SWE-bench_Multilingual"}
     )

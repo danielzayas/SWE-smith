@@ -103,6 +103,7 @@ def run_patch_in_container(
     commit: str | None = None,
     f2p_only: bool = False,
     is_gold: bool = False,
+    test_command: str | None = None,
 ) -> tuple[Logger, bool] | None:
     """
     Run a patch in a container. The general logical flow is as follows:
@@ -112,6 +113,17 @@ def run_patch_in_container(
         a. Apply patch to codebase
     4. Copy eval script to container
     5. Run eval script, write outputs to logs
+
+    Args:
+        instance: The instance to run.
+        run_id: The ID for the run (used for container naming and logging).
+        log_dir: The directory to store logs.
+        timeout: The timeout for the test command in seconds.
+        patch: The patch to apply to the repository.
+        commit: The commit to checkout (optional).
+        f2p_only: Whether to run only fail-to-pass tests.
+        is_gold: Whether the patch is a gold (bug-fixing) patch.
+        test_command: The command to run in the container (optional, overrides profile default).
 
     Returns:
         tuple[Logger, bool]: logger and whether the container timed out or None if an error occurred
@@ -231,7 +243,8 @@ def run_patch_in_container(
 
         # Copy eval script to container
         eval_file = Path(log_dir / "eval.sh")
-        test_command, _ = rp.get_test_cmd(instance, f2p_only=f2p_only)
+        if test_command is None:
+            test_command, _ = rp.get_test_cmd(instance, f2p_only=f2p_only)
         eval_file.write_text(
             "\n".join(
                 [

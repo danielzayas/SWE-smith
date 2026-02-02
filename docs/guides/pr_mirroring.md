@@ -34,7 +34,8 @@ python -m swesmith.bug_gen.mirror.generate $file \
 
 For example:
 ```shell
-python -m swesmith.bug_gen.mirror.generate SWE-bench/outputs/okhttp_pr_8904/tasks/okhttp-task-instances.jsonl \
+python -m swesmith.bug_gen.mirror.generate \ 
+    "/Users/danielzayas/Development/SWE-bench/outputs/okhttp_pr_8904_v2/tasks/okhttp-task-instances.jsonl" \ 
     --model gemini/gemini-3-flash-preview
 ```
 
