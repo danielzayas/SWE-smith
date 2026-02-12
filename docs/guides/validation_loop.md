@@ -1,5 +1,8 @@
 # Validation Loop 
 
+Issue 195 created by @danielzayas on 2026-01-06: 
+https://github.com/SWE-bench/SWE-smith/issues/195
+
 ## TLDR
 
 The Self-Play SWE-RL [paper](https://arxiv.org/abs/2512.18552) has a good validation loop idea. Let's copy the pattern 😇 (slack [thread](https://swe-bench.slack.com/archives/C08URFC7S1F/p1766969527046769)). 
