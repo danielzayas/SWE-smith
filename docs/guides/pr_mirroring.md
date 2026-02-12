@@ -64,7 +64,7 @@ graph TD
     D -->|Fail| G[Path 2: Recovery / Mirror]
     
     G --> H[Loop through Changed Files]
-    H --> I[LLM Reverses Changes<br/>(RECOVERY_PROMPT)]
+    H --> I["LLM Reverses Changes<br/>(RECOVERY_PROMPT)"]
     I --> J[Generate Reversal Patch per File]
     J --> K{All Files Processed?}
     K -->|No| H
