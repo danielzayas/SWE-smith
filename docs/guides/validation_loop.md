@@ -36,6 +36,41 @@ When validation fails, which it often does, the developer must manually go back 
 1. Add a validation loop for the newly created Docker image + mirroed repository. For example, all tests at the HEAD commit should pass. We should know that the test suite runs successfully at HEAD before moving on to the next step.
 2. Add a loop for the bug-introducing patch + validation. Iterate until at least one test fails at HEAD~1. Logs from failures during try N should be included in the new prompt for try N+1 (and logs from attempt N-1 should be excluded). Max number of tries should be configurable. 
 
+```mermaid
+flowchart TD
+    subgraph Step1 ["Step 1: env_construction (human-in-the-loop)"]
+        A1["Create Docker Image<br/>(swesmith.x86_64.&lt;repo&gt;.&lt;commit&gt;)"]
+        A2["Create Mirror Repo<br/>(swesmith GitHub org)"]
+        A1 --> A2
+    end
+
+    subgraph VL1 ["Enhancement #1: Env Validation Loop"]
+        B1{"Baseline test suite<br/>passes at HEAD?"}
+    end
+
+    subgraph Step2 ["Step 2: bug_gen (e.g. PR Mirroring)"]
+        C1["Generate Patches"]
+        C2["Artifacts:<br/>bug__pr_N.diff<br/>metadata__pr_N.json<br/>ref__pr_N.diff (golden patch)"]
+        C1 --> C2
+    end
+
+    subgraph Step3 ["Step 3: validation via valid.py"]
+        D1{"Bugged test suite fails<br/>at least 1 test at HEAD~1?"}
+        D2{"FAIL_TO_PASS &gt; 0?"}
+        D1 -->|Yes| D2
+    end
+
+    E["Valid Task Instance"]
+
+    A2 --> B1
+    B1 -->|"No - retry env_construction"| A1
+    B1 -->|Yes| C1
+    C2 --> D1
+    D1 -.->|"No - retry with failure logs<br/>(max N tries) [Enhancement #2]"| C1
+    D2 -.->|"No - retry with failure logs<br/>(max N tries) [Enhancement #2]"| C1
+    D2 -->|Yes| E
+```
+
 ## Issue Labels
 
 p.s. Have permissions to add the Enhancement label to this GitHub issue. It'd be good if one of the maintainers could add it or give all developers permissions to add labels to issues they create. 
