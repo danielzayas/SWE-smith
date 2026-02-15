@@ -35,6 +35,7 @@ When validation fails, which it often does, the developer must manually go back 
 
 1. Add a validation loop for the newly created Docker image + mirroed repository. For example, all tests at the HEAD commit should pass. We should know that the test suite runs successfully at HEAD before moving on to the next step.
 2. Add a loop for the bug-introducing patch + validation. Iterate until at least one test fails at HEAD~1. Logs from failures during try N should be included in the new prompt for try N+1 (and logs from attempt N-1 should be excluded). Max number of tries should be configurable. 
+3. Add a new, post-validation step. Something like `my-eval-harness run --dataset my-new-dataset --model opus-5 --agent claude-code` -> Does claude code fail to resolve the task? If conversion rate is very low (e.g. 1 in 10k), filter the pull requests at the top of the funnel. 
 
 ```mermaid
 flowchart TD
